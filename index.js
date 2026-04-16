@@ -8,54 +8,51 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Daftar Invidious public instances (fallback jika satu down)
-const INVIDIOUS_INSTANCES = [
-  "https://invidious.io.lol",
-  "https://inv.nadeko.net",
-  "https://invidious.privacydev.net",
-  "https://yt.cdaut.de",
-  "https://invidious.fdn.fr",
+// Piped API instances - lebih stabil dari Invidious
+const PIPED_INSTANCES = [
+  "https://pipedapi.kavin.rocks",
+  "https://pipedapi.adminforge.de",
+  "https://pipedapi.coldtea.lol",
+  "https://pipedapi.darkness.services",
+  "https://piped-api.garudalinux.org",
+  "https://pipedapi.in.projectsegfau.lt",
 ];
 
-async function getAudioFromInvidious(videoId) {
-  for (const instance of INVIDIOUS_INSTANCES) {
+async function getAudioFromPiped(videoId) {
+  for (const instance of PIPED_INSTANCES) {
     try {
-      const res = await fetch(
-        `${instance}/api/v1/videos/${videoId}?fields=title,videoThumbnails,adaptiveFormats`,
-        {
-          headers: { "User-Agent": "Mozilla/5.0" },
-          signal: AbortSignal.timeout(8000),
-        }
-      );
+      const res = await fetch(`${instance}/streams/${videoId}`, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+        signal: AbortSignal.timeout(7000),
+      });
 
       if (!res.ok) continue;
       const data = await res.json();
+      if (data.error) continue;
 
-      // Cari format audio only, urutkan dari bitrate tertinggi
-      const audioFormats = (data.adaptiveFormats || [])
-        .filter(f => f.type && f.type.startsWith("audio/") && f.url)
+      // Piped returns audioStreams array
+      const audioStreams = (data.audioStreams || [])
+        .filter(s => s.url)
         .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
 
-      if (!audioFormats.length) continue;
+      if (!audioStreams.length) continue;
 
-      const bestAudio = audioFormats[0];
-      const thumbnail =
-        (data.videoThumbnails || []).find(t => t.quality === "high")?.url ||
-        `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+      const best = audioStreams[0];
+      const thumbnail = data.thumbnailUrl || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
       return {
-        streamUrl: bestAudio.url,
+        streamUrl: best.url,
         title: data.title || "Unknown",
-        thumbnail: thumbnail.startsWith("http")
-          ? thumbnail
-          : `${instance}${thumbnail}`,
+        thumbnail,
       };
     } catch (err) {
-      console.warn(`Instance ${instance} gagal:`, err.message);
+      console.warn(`Piped ${instance} gagal:`, err.message);
       continue;
     }
   }
-  throw new Error("Semua server Invidious tidak tersedia saat ini");
+  throw new Error("Semua server tidak tersedia. Coba lagi nanti.");
 }
 
 app.get("/api/search", async (req, res) => {
@@ -80,11 +77,11 @@ app.get("/api/stream", async (req, res) => {
     const id = req.query.id;
     if (!id) return res.status(400).json({ error: "ID diperlukan" });
 
-    const result = await getAudioFromInvidious(id);
+    const result = await getAudioFromPiped(id);
     return res.json(result);
   } catch (err) {
     console.error("Stream error:", err.message);
-    res.status(500).json({ error: "Gagal stream: " + err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
