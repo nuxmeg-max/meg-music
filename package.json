@@ -1,0 +1,9 @@
+{
+  "name": "meg-music",
+  "version": "1.0.0",
+  "description": "Music Player API for Meg Music",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
