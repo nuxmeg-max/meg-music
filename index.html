@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MEG MUSIC</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">MEG MUSIC</span>
+      <span class="logo-tag">// PLAYER v2.0</span>
+    </div>
+    <div class="header-right">
+      <span class="status-dot"></span>
+      <span class="status-text" id="statusText">IDLE</span>
+    </div>
+  </header>
+
+  <main class="main-layout">
+    <section class="panel panel-search">
+      <div class="panel-label">SEARCH</div>
+      <div class="search-wrapper">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="TRACK / ARTIST..." autocomplete="off" />
+        <button class="search-btn" id="searchBtn">RUN</button>
+      </div>
+      <div class="results-header" id="resultsHeader" style="display:none;">
+        <span id="resultsCount">0 RESULTS</span>
+        <span class="results-tag">// DATABASE</span>
+      </div>
+      <div class="results-list" id="resultsList">
+        </div>
+    </section>
+
+    <section class="panel panel-playlist">
+      <div class="panel-label">
+        PLAYLIST
+        <span class="playlist-count" id="playlistCount">[ 0 ]</span>
+      </div>
+      <div class="playlist-actions">
+        <button class="action-btn" id="clearPlaylistBtn">CLEAR ALL</button>
+      </div>
+      <div class="playlist-list" id="playlistList">
+        <div class="empty-state"><p>NO TRACKS SAVED</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="player-bar" id="playerBar">
+    <div class="player-info">
+      <div class="player-track" id="playerTrack">—</div>
+      <div class="player-artist" id="playerArtist">SELECT A TRACK TO PLAY</div>
+    </div>
+
+    <div class="player-center">
+      <div class="player-controls">
+        <button class="ctrl-btn" id="prevBtn"><i class="fa-solid fa-backward-step"></i></button>
+        <button class="ctrl-btn ctrl-play" id="playPauseBtn">
+          <i id="playIcon" class="fa-solid fa-play"></i>
+        </button>
+        <button class="ctrl-btn" id="nextBtn"><i class="fa-solid fa-forward-step"></i></button>
+      </div>
+      <div class="progress-wrapper">
+        <span class="time-label" id="currentTime">0:00</span>
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span class="time-label" id="totalTime">0:00</span>
+      </div>
+    </div>
+
+    <div class="player-right">
+      <span class="vol-label">VOL</span>
+      <input type="range" class="vol-slider" id="volSlider" min="0" max="100" value="80" />
+    </div>
+
+    <audio id="audioPlayer" preload="metadata"></audio>
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
