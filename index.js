@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const yts = require("yt-search");
+const ytdl = require("@distube/ytdl-core");
 
 const app = express();
 app.use(cors());
@@ -30,36 +31,37 @@ app.get("/api/stream", async (req, res) => {
         const id = req.query.id;
         if (!id) return res.status(400).json({ error: "ID diperlukan" });
 
-        // Pakai API pihak ketiga yang biasa dipakai scripter bot
-        // Ini lebih kuat dibanding ytdl-core biasa
-        const response = await fetch(`https://api.vyt.ovh/v1/info?id=${id}`);
-        const data = await response.json();
+        const url = `https://www.youtube.com/watch?v=${id}`;
 
-        // Cari format audio saja yang kualitasnya oke
-        const audio = data.formats.filter(f => f.type === 'audio').sort((a, b) => b.bitrate - a.bitrate)[0];
-
-        if (audio && audio.url) {
-            return res.json({
-                streamUrl: audio.url,
-                title: data.title,
-                thumbnail: data.thumbnail
-            });
-        } else {
-            // Fallback ke API lain jika yang pertama gagal
-            const backup = await fetch(`https://api.shatech.my.id/api/download/ytmp3?url=https://www.youtube.com/watch?v=${id}`);
-            const resBackup = await backup.json();
-            
-            if (resBackup.result && resBackup.result.download) {
-                return res.json({
-                    streamUrl: resBackup.result.download,
-                    title: resBackup.result.title,
-                    thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
-                });
-            }
-            throw new Error("Proteksi YouTube terlalu kuat.");
+        // Validasi dulu apakah video bisa diakses
+        if (!ytdl.validateID(id)) {
+            return res.status(400).json({ error: "ID video tidak valid" });
         }
+
+        // Ambil info video untuk dapat stream URL audio
+        const info = await ytdl.getInfo(url);
+
+        // Pilih format audio terbaik (hanya audio, bukan video+audio)
+        const audioFormat = ytdl.chooseFormat(info.formats, {
+            quality: "highestaudio",
+            filter: "audioonly"
+        });
+
+        if (!audioFormat || !audioFormat.url) {
+            return res.status(500).json({ error: "Format audio tidak tersedia" });
+        }
+
+        // Kirim URL audio langsung ke frontend (bukan stream binary)
+        // Frontend akan langsung fetch ke URL ini via <audio> tag
+        return res.json({
+            streamUrl: audioFormat.url,
+            title: info.videoDetails.title,
+            thumbnail: info.videoDetails.thumbnails?.slice(-1)[0]?.url || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
+        });
+
     } catch (err) {
-        res.status(500).json({ error: "Gagal stream: Server YouTube menolak koneksi." });
+        console.error("Stream error:", err.message);
+        res.status(500).json({ error: "Gagal stream: " + err.message });
     }
 });
 
