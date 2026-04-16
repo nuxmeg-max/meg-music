@@ -8,10 +8,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Route Search
+// API untuk Search (Tetap pakai yt-search karena stabil)
 app.get("/api/search", async (req, res) => {
     try {
-        const query = req.query.q || "Top Hits Indonesia";
+        const query = req.query.q || "Hindia";
         const r = await yts(query);
         const songs = r.videos.slice(0, 20).map(v => ({
             id: v.videoId,
@@ -26,53 +26,40 @@ app.get("/api/search", async (req, res) => {
     }
 });
 
-// Route Stream (Versi Baru menggunakan API Downloader yang lebih kuat)
+// API untuk Stream (Ganti ke provider API yang lebih kuat)
 app.get("/api/stream", async (req, res) => {
     try {
         const id = req.query.id;
         if (!id) return res.status(400).json({ error: "ID diperlukan" });
 
-        const videoUrl = `https://www.youtube.com/watch?v=${id}`;
-        
-        // Menggunakan API dari tmate.is / ddownr (Pihak ketiga yang sangat stabil)
-        const response = await fetch(`https://api.boxentriq.com/tool/get-video-info?v=${id}`);
+        // Pakai API pihak ketiga yang sering dipakai bot WhatsApp
+        // Provider: Shatech API
+        const response = await fetch(`https://api.shatech.my.id/api/download/ytmp3?url=https://www.youtube.com/watch?v=${id}`);
         const data = await response.json();
 
-        // Jika API di atas tidak memberikan direct link, kita pakai Cobalt dengan mode Tunnel
-        if (data && data.url) {
+        if (data.status && data.result && data.result.download) {
             return res.json({
-                streamUrl: data.url,
-                title: data.title || "Music Stream",
+                streamUrl: data.result.download,
+                title: data.result.title || "Playing...",
                 thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
             });
         } else {
-            // Fallback terakhir ke instance Cobalt yang berbeda
-            const backupResponse = await fetch(`https://co.wuk.sh/api/json`, {
-                method: "POST",
-                headers: { 
-                    "Content-Type": "application/json", 
-                    "Accept": "application/json" 
-                },
-                body: JSON.stringify({ 
-                    url: videoUrl, 
-                    downloadMode: "audio",
-                    asAudio: true
-                })
-            });
-            const backupData = await backupResponse.json();
+            // Backup ke API lain kalau provider utama gagal
+            const backup = await fetch(`https://api.zenkey.my.id/api/download/ytmp3?url=https://www.youtube.com/watch?v=${id}`);
+            const resBackup = await backup.json();
             
-            if (backupData.url) {
+            if (resBackup.result && resBackup.result.download) {
                 return res.json({
-                    streamUrl: backupData.url,
+                    streamUrl: resBackup.result.download,
                     title: "Streaming Audio",
                     thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
                 });
             }
-            throw new Error("Semua API Downloader sedang sibuk");
+            throw new Error("Semua provider sedang down.");
         }
     } catch (err) {
-        console.error("Critical Stream Error:", err.message);
-        res.status(500).json({ error: "Gagal memutar lagu. YouTube sedang memproteksi server." });
+        console.error("Stream Error:", err.message);
+        res.status(500).json({ error: "Gagal stream: YouTube sangat ketat hari ini." });
     }
 });
 
