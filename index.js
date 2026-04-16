@@ -9,49 +9,44 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Route Pencarian
+// Route Search
 app.get("/api/search", async (req, res) => {
-    const q = req.query.q || "Top Hits Indonesia";
     try {
+        const query = req.query.q || "Top Hits Indonesia";
         const ytmusic = new YTMusic();
         await ytmusic.initialize();
-        const results = await ytmusic.searchSongs(q);
+        const results = await ytmusic.searchSongs(query);
         
-        const songs = (results || []).slice(0, 20).map(song => ({
+        const songs = results.map(song => ({
             id: song.videoId,
-            title: song.name || "Unknown Title",
-            artist: song.artist?.name || "Various Artists",
-            thumbnail: song.thumbnails?.[song.thumbnails.length - 1]?.url || `https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`,
-            duration: song.duration || 0
+            title: song.name,
+            artist: song.artist?.name || "Unknown",
+            thumbnail: song.thumbnails?.[song.thumbnails.length - 1]?.url || "",
+            duration: song.duration
         }));
         
         res.json({ results: songs });
     } catch (err) {
-        console.error("Search Error:", err);
-        res.status(500).json({ error: "Gagal mencari lagu", details: err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Route Streaming
+// Route Stream
 app.get("/api/stream", async (req, res) => {
-    const id = req.query.id;
-    if (!id) return res.status(400).json({ error: "ID diperlukan" });
-    
     try {
-        const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
-        const format = ytdl.filterFormats(info.formats, "audioonly")
-                           .sort((a, b) => (b.audioBitrate || 0) - (a.audioBitrate || 0))[0];
-        
-        if (!format) throw new Error("Format audio tidak ditemukan");
+        const id = req.query.id;
+        if (!id) return res.status(400).json({ error: "ID Missing" });
 
+        const info = await ytdl.getInfo(id);
+        const format = ytdl.filterFormats(info.formats, "audioonly")[0];
+        
         res.json({
             streamUrl: format.url,
             title: info.videoDetails.title,
-            thumbnail: info.videoDetails.thumbnails[0]?.url || ""
+            thumbnail: info.videoDetails.thumbnails[0].url
         });
     } catch (err) {
-        console.error("Stream Error:", err);
-        res.status(500).json({ error: "Gagal memutar lagu" });
+        res.status(500).json({ error: err.message });
     }
 });
 
