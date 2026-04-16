@@ -9,24 +9,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Inisialisasi YTMusic di luar agar lebih cepat
-const ytmusic = new YTMusic();
-let isInitialized = false;
-
-async function ensureInit() {
-    if (!isInitialized) {
-        await ytmusic.initialize();
-        isInitialized = true;
-    }
-}
-
+// Route Pencarian
 app.get("/api/search", async (req, res) => {
     const q = req.query.q || "Top Hits Indonesia";
     try {
-        await ensureInit();
+        const ytmusic = new YTMusic();
+        await ytmusic.initialize();
         const results = await ytmusic.searchSongs(q);
         
-        // Map data dengan proteksi jika ada field yang kosong
         const songs = (results || []).slice(0, 20).map(song => ({
             id: song.videoId,
             title: song.name || "Unknown Title",
@@ -42,6 +32,7 @@ app.get("/api/search", async (req, res) => {
     }
 });
 
+// Route Streaming
 app.get("/api/stream", async (req, res) => {
     const id = req.query.id;
     if (!id) return res.status(400).json({ error: "ID diperlukan" });
@@ -64,14 +55,8 @@ app.get("/api/stream", async (req, res) => {
     }
 });
 
-// Route untuk index.html
 app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 module.exports = app;
-
-if (require.main === module) {
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => console.log(`Server jalan di port ${PORT}`));
-}
