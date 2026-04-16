@@ -2,16 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>MEG MUSIC</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- HEADER -->
   <header class="header">
     <div class="header-left">
       <span class="logo">MEG MUSIC</span>
@@ -23,22 +21,14 @@
     </div>
   </header>
 
-  <!-- MAIN LAYOUT -->
   <main class="main-layout">
 
-    <!-- LEFT PANEL: SEARCH + RESULTS -->
     <section class="panel panel-search">
       <div class="panel-label">SEARCH</div>
 
       <div class="search-wrapper">
         <span class="search-icon">⌕</span>
-        <input
-          type="text"
-          id="searchInput"
-          class="search-input"
-          placeholder="TRACK / ARTIST / ALBUM..."
-          autocomplete="off"
-        />
+        <input type="text" id="searchInput" class="search-input" placeholder="TRACK / ARTIST / ALBUM..." autocomplete="off" />
         <button class="search-btn" id="searchBtn">RUN</button>
       </div>
 
@@ -55,7 +45,6 @@
       </div>
     </section>
 
-    <!-- RIGHT PANEL: PLAYLIST -->
     <section class="panel panel-playlist">
       <div class="panel-label">
         PLAYLIST
@@ -76,7 +65,6 @@
 
   </main>
 
-  <!-- PLAYER BAR (BOTTOM) -->
   <footer class="player-bar" id="playerBar">
     <div class="player-info">
       <div class="player-track" id="playerTrack">—</div>
@@ -85,18 +73,17 @@
 
     <div class="player-center">
       <div class="player-controls">
-        <button class="ctrl-btn" id="prevBtn" title="Previous">&#9664;&#9664;</button>
-        <button class="ctrl-btn ctrl-play" id="playPauseBtn" title="Play/Pause">
-          <span id="playIcon">&#9654;</span>
+        <button class="ctrl-btn" id="prevBtn"><i class="fa-solid fa-backward-step"></i></button>
+        <button class="ctrl-btn ctrl-play" id="playPauseBtn">
+          <i id="playIcon" class="fa-solid fa-play"></i>
         </button>
-        <button class="ctrl-btn" id="nextBtn" title="Next">&#9654;&#9654;</button>
+        <button class="ctrl-btn" id="nextBtn"><i class="fa-solid fa-forward-step"></i></button>
       </div>
 
       <div class="progress-wrapper">
         <span class="time-label" id="currentTime">0:00</span>
         <div class="progress-bar" id="progressBar">
           <div class="progress-fill" id="progressFill"></div>
-          <div class="progress-thumb" id="progressThumb"></div>
         </div>
         <span class="time-label" id="totalTime">0:00</span>
       </div>
@@ -105,15 +92,10 @@
     <div class="player-right">
       <span class="vol-label">VOL</span>
       <input type="range" class="vol-slider" id="volSlider" min="0" max="100" value="80" />
-      <span class="vol-value" id="volValue">80</span>
     </div>
 
-    <!-- Hidden audio element -->
     <audio id="audioPlayer" preload="metadata"></audio>
   </footer>
-
-  <!-- TOAST NOTIFICATION -->
-  <div class="toast" id="toast"></div>
 
   <script src="script.js"></script>
 </body>
