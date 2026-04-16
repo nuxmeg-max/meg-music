@@ -3,24 +3,23 @@ const axios = require('axios');
 module.exports = async (req, res) => {
   const { q } = req.query;
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  
-  if (!q) return res.status(400).json({ error: 'Query kosong' });
+
+  if (!q) return res.status(400).json({ error: 'Query required' });
 
   try {
-    const response = await axios.get(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=20`);
+    // Kita pakai search engine Deezer (lebih stabil & tidak butuh API Key)
+    const response = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(q)}`);
     
-    const tracks = response.data.results.map(track => ({
-      id: track.trackId.toString(),
-      name: track.trackName,
-      artist: track.artistName,
-      duration_ms: track.trackTimeMillis,
-      preview_url: track.previewUrl,
-      image: track.artworkUrl100
+    const tracks = response.data.data.map(track => ({
+      id: track.id.toString(),
+      name: track.title,
+      artist: track.artist.name,
+      image: track.album.cover_medium,
+      preview_url: track.preview // Tetap sediakan preview untuk cadangan
     }));
 
     res.status(200).json({ tracks });
   } catch (error) {
-    res.status(500).json({ error: 'Gagal mencari lagu' });
+    res.status(500).json({ error: 'Server Error' });
   }
 };
