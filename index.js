@@ -8,7 +8,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// API untuk Search (Tetap pakai yt-search karena stabil)
 app.get("/api/search", async (req, res) => {
     try {
         const query = req.query.q || "Hindia";
@@ -26,40 +25,41 @@ app.get("/api/search", async (req, res) => {
     }
 });
 
-// API untuk Stream (Ganti ke provider API yang lebih kuat)
 app.get("/api/stream", async (req, res) => {
     try {
         const id = req.query.id;
         if (!id) return res.status(400).json({ error: "ID diperlukan" });
 
-        // Pakai API pihak ketiga yang sering dipakai bot WhatsApp
-        // Provider: Shatech API
-        const response = await fetch(`https://api.shatech.my.id/api/download/ytmp3?url=https://www.youtube.com/watch?v=${id}`);
+        // Pakai API pihak ketiga yang biasa dipakai scripter bot
+        // Ini lebih kuat dibanding ytdl-core biasa
+        const response = await fetch(`https://api.vyt.ovh/v1/info?id=${id}`);
         const data = await response.json();
 
-        if (data.status && data.result && data.result.download) {
+        // Cari format audio saja yang kualitasnya oke
+        const audio = data.formats.filter(f => f.type === 'audio').sort((a, b) => b.bitrate - a.bitrate)[0];
+
+        if (audio && audio.url) {
             return res.json({
-                streamUrl: data.result.download,
-                title: data.result.title || "Playing...",
-                thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
+                streamUrl: audio.url,
+                title: data.title,
+                thumbnail: data.thumbnail
             });
         } else {
-            // Backup ke API lain kalau provider utama gagal
-            const backup = await fetch(`https://api.zenkey.my.id/api/download/ytmp3?url=https://www.youtube.com/watch?v=${id}`);
+            // Fallback ke API lain jika yang pertama gagal
+            const backup = await fetch(`https://api.shatech.my.id/api/download/ytmp3?url=https://www.youtube.com/watch?v=${id}`);
             const resBackup = await backup.json();
             
             if (resBackup.result && resBackup.result.download) {
                 return res.json({
                     streamUrl: resBackup.result.download,
-                    title: "Streaming Audio",
+                    title: resBackup.result.title,
                     thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
                 });
             }
-            throw new Error("Semua provider sedang down.");
+            throw new Error("Proteksi YouTube terlalu kuat.");
         }
     } catch (err) {
-        console.error("Stream Error:", err.message);
-        res.status(500).json({ error: "Gagal stream: YouTube sangat ketat hari ini." });
+        res.status(500).json({ error: "Gagal stream: Server YouTube menolak koneksi." });
     }
 });
 
